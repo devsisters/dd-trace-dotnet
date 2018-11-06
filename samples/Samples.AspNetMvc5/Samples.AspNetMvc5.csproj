@@ -102,6 +102,7 @@
     <Compile Include="Controllers\ContactsController.cs" />
     <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Data\Contact.cs" />
     <Compile Include="Data\SampleDbContext.cs" />
     <Compile Include="Global.asax.cs">

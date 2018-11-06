@@ -38,73 +38,62 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             using (Scope scope = CreateScope(controllerContext))
             {
                 return scope.Span.Trace(
-                                        () =>
-                                        {
-                                            CancellationToken cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
-                                            return executeAsyncFunc(@this, controllerContext, cancellationToken);
-                                        },
-                                        onComplete: e =>
-                                        {
-                                            if (e != null)
-                                            {
-                                                scope.Span.SetException(e);
-                                            }
+                    () =>
+                    {
+                        CancellationToken cancellationToken = ((CancellationTokenSource)cancellationTokenSource).Token;
+                        return executeAsyncFunc(@this, controllerContext, cancellationToken);
+                    },
+                    onComplete: e =>
+                    {
+                        if (e != null)
+                        {
+                            scope.Span.SetException(e);
+                        }
 
-                                            // some fields aren't set till after execution, so repopulate anything missing
-                                            UpdateSpan(controllerContext, scope.Span);
-                                            scope.Span.Finish();
-                                        });
+                        // some fields aren't set till after execution, so repopulate anything missing
+                        UpdateSpan(controllerContext, scope.Span);
+                        scope.Span.Finish();
+                    });
             }
         }
 
-        private static Scope CreateScope(dynamic controllerContext)
+        private static Scope CreateScope(object controllerContext)
         {
             var scope = Tracer.Instance.StartActive(OperationName, finishOnClose: false);
             UpdateSpan(controllerContext, scope.Span);
             return scope;
         }
 
-        private static void UpdateSpan(dynamic controllerContext, Span span)
+        private static void UpdateSpan(object controllerContext, Span span)
         {
-            var req = controllerContext?.Request;
+            var request = controllerContext.GetProperty("Request");
+            var headers = request.GetProperty("Headers");
+            var host = headers.GetProperty("Host") as string;
+            var requestUri = request.GetProperty("RequestUri") as Uri;
+            var rawUrl = requestUri?.ToString().ToLowerInvariant();
+            var path = requestUri?.AbsolutePath.ToLowerInvariant();
+            var method = (request.GetProperty("Method").GetProperty("Method") as string)?.ToUpperInvariant() ?? "GET";
+            var routeData = controllerContext.GetProperty("RouteData");
+            var route = routeData.GetProperty("Route");
+            var routeTemplate = route.GetProperty("RouteTemplate") as string;
+            var routeValues = routeData.GetProperty("Values") as IDictionary<string, object>;
+            var controller = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
+            var action = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
 
-            string host = req?.Headers?.Host ?? string.Empty;
-            string rawUrl = req?.RequestUri?.ToString()?.ToLowerInvariant() ?? string.Empty;
-            string method = controllerContext?.Request?.Method?.Method?.ToUpperInvariant() ?? "GET";
-            string route = null;
-            try
+            if (string.IsNullOrWhiteSpace(routeTemplate))
             {
-                route = controllerContext?.RouteData?.Route?.RouteTemplate;
+                span.ResourceName = $"{method} {path}";
             }
-            catch
+            else
             {
-            }
-
-            string resourceName = $"{method} {rawUrl}";
-            if (route != null)
-            {
-                resourceName = $"{method} {route}";
-            }
-
-            string controller = string.Empty;
-            string action = string.Empty;
-            try
-            {
-                if (controllerContext?.RouteData?.Values is IDictionary<string, object> routeValues)
-                {
-                    controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                    action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                }
-            }
-            catch
-            {
+                routeTemplate = routeTemplate.Replace("{controller}", controller).Replace("{action}", action);
+                span.ResourceName = $"{method} {routeTemplate}";
             }
 
-            span.ResourceName = resourceName;
             span.Type = SpanTypes.Web;
             span.SetTag(Tags.AspNetAction, action);
             span.SetTag(Tags.AspNetController, controller);
-            span.SetTag(Tags.AspNetRoute, route);
+            span.SetTag(Tags.AspNetRoute, routeTemplate);
             span.SetTag(Tags.HttpMethod, method);
             span.SetTag(Tags.HttpRequestHeadersHost, host);
             span.SetTag(Tags.HttpUrl, rawUrl);
