@@ -81,12 +81,24 @@ namespace GenerateIntegrationDefinitions
 
         private static string GetIntegrationName(Type wrapperType)
         {
-            const string integrations = "Integration";
             var typeName = wrapperType.Name;
+            const string integration = "Integration";
+            string suffix;
 
-            if (typeName.EndsWith(integrations, StringComparison.InvariantCultureIgnoreCase))
+            if (wrapperType.IsGenericTypeDefinition)
             {
-                return typeName.Substring(startIndex: 0, length: typeName.Length - integrations.Length);
+                // if generic type, add generic syntax to name, e.g. MyClass`1
+                var genericArgumentCount = wrapperType.GetGenericArguments().Length;
+                suffix = $"{integration}`{genericArgumentCount}";
+            }
+            else
+            {
+                suffix = integration;
+            }
+
+            if (typeName.EndsWith(suffix, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return typeName.Substring(startIndex: 0, length: typeName.Length - suffix.Length);
             }
 
             return typeName;
