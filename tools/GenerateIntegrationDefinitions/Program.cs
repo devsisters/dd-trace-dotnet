@@ -27,7 +27,7 @@ namespace GenerateIntegrationDefinitions
                                    {
                                        wrapperType,
                                        wrapperMethod,
-                                       attribute
+                                       attribute,
                                    }
                                    by integrationName into g
                                select new
@@ -40,29 +40,29 @@ namespace GenerateIntegrationDefinitions
                                                              {
                                                                  assembly = item.attribute.CallerAssembly,
                                                                  type = item.attribute.CallerType,
-                                                                 method = item.attribute.CallerMethod
+                                                                 method = item.attribute.CallerMethod,
                                                              },
                                                              target = new
                                                              {
                                                                  assembly = item.attribute.TargetAssembly,
                                                                  type = item.attribute.TargetType,
                                                                  method = item.attribute.TargetMethod ?? item.wrapperMethod.Name,
-                                                                 signature = item.attribute.TargetSignature
+                                                                 signature = item.attribute.TargetSignature,
                                                              },
                                                              wrapper = new
                                                              {
                                                                  assembly = integrationsAssembly.FullName,
                                                                  type = item.wrapperType.FullName,
                                                                  method = item.wrapperMethod.Name,
-                                                                 signature = GetMethodSignature(item.wrapperMethod)
-                                                             }
-                                                         }
+                                                                 signature = GetMethodSignature(item.wrapperMethod),
+                                                             },
+                                                         },
                                };
 
             var serializerSettings = new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore,
-                Formatting = Formatting.Indented
+                Formatting = Formatting.Indented,
             };
 
             var json = JsonConvert.SerializeObject(integrations, serializerSettings);
