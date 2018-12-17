@@ -26,7 +26,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   is_attached_ = FALSE;
 
   const auto process_name = GetCurrentProcessName();
-  Info("Initialize() called for", process_name);
+  Info("CorProfiler::Initialize");
 
   if (integrations_.empty()) {
     Warn("Profiler disabled: ", kIntegrationsEnvironmentName,
@@ -66,7 +66,7 @@ CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown) {
   }
 
   // we're in!
-  Info("Profiler attached to process", process_name);
+  Info("Profiler attached to process: ", process_name);
   this->info_->AddRef();
   is_attached_ = true;
   profiler = this;
@@ -170,7 +170,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id,
     module_id_to_info_map_[module_id] = module_metadata;
   }
 
-  Info("ModuleLoadFinished() emitted instrumentation metadata for",
+  Info("ModuleLoadFinished() emitted instrumentation metadata for: ",
        module_info.assembly.name);
   return S_OK;
 }
@@ -195,9 +195,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   ClassID class_id;
   ModuleID module_id;
   mdToken function_token = mdTokenNil;
+  ClassID function_type_args[20] = {};
+  ULONG32 function_type_args_count = 0;
 
-  HRESULT hr = this->info_->GetFunctionInfo(function_id, &class_id, &module_id,
-                                            &function_token);
+  HRESULT hr = this->info_->GetFunctionInfo2(
+      function_id, 0, &class_id, &module_id, &function_token, 20,
+      &function_type_args_count, function_type_args);
   RETURN_OK_IF_FAILED(hr);
 
   ModuleMetadata* module_metadata = nullptr;
@@ -220,6 +223,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(
   if (!caller.IsValid()) {
     return S_OK;
   }
+
+  // if (caller.signature.NumberOfTypeArguments() == 0) {
+  //   Info("Entered ", caller.type.name, ".", caller.name, "(/* ",
+  //        caller.signature.NumberOfArguments(), " */)");
+  // } else {
+  //   Info("Entered ", caller.type.name, ".", caller.name, "`",
+  //        caller.signature.NumberOfTypeArguments(), "(/* ",
+  //        caller.signature.NumberOfArguments(), " */)");
+  // }
 
   auto method_replacements =
       module_metadata->GetMethodReplacementsForCaller(caller);

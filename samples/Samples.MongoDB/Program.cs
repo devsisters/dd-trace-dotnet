@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Datadog.Trace.ClrProfiler;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -19,7 +20,8 @@ namespace Samples.MongoDB
                 { "name", "MongoDB" },
                 { "type", "Database" },
                 { "count", 1 },
-                { "info", new BsonDocument
+                {
+                    "info", new BsonDocument
                     {
                         { "x", 203 },
                         { "y", 102 }
@@ -31,18 +33,17 @@ namespace Samples.MongoDB
             var database = client.GetDatabase("test-db");
             var collection = database.GetCollection<BsonDocument>("employees");
 
-            collection.DeleteMany(allFilter);
-            collection.InsertOne(newDocument);
+            using (var scope = Datadog.Trace.Tracer.Instance.StartActive("Main()", serviceName: "Samples.MongoDB"))
+            {
+                collection.DeleteMany(allFilter);
+                collection.InsertOne(newDocument);
 
-            var count = collection.Count(new BsonDocument());
-            Console.WriteLine($"Documents: {count}");
+                var count = collection.Count(new BsonDocument());
+                Console.WriteLine($"Documents: {count}");
 
-            var allDocuments = collection.Find(allFilter).ToList();
-
-            Console.WriteLine(newDocument == allDocuments[0]);
-
-            Console.WriteLine("Press [ENTER] to exit...");
-            Console.ReadLine();
+                var allDocuments = collection.Find(allFilter).ToList();
+                Console.WriteLine(allDocuments.FirstOrDefault());
+            }
         }
     }
 }

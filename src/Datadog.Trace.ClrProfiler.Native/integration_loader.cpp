@@ -13,7 +13,7 @@ using json = nlohmann::json;
 std::vector<Integration> LoadIntegrationsFromEnvironment() {
   std::vector<Integration> integrations;
   for (const auto f : GetEnvironmentValues(kIntegrationsEnvironmentName)) {
-    Info("loading integrations from", f);
+    Info("Loading integrations from file: ", f);
     auto is = LoadIntegrationsFromFile(f);
     for (auto& i : is) {
       integrations.push_back(i);
@@ -59,11 +59,11 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream) {
       }
     }
 
-    Info("loaded integrations:", j.dump());
+    Info("Loaded integrations: ", j.dump());
   } catch (const json::parse_error& e) {
-    Warn("invalid integrations:", e.what());
+    Warn("Invalid integrations:", e.what());
   } catch (const json::type_error& e) {
-    Warn("invalid integrations:", e.what());
+    Warn("Invalid integrations:", e.what());
   } catch (...) {
     auto ex = std::current_exception();
     try {
