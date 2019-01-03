@@ -49,12 +49,9 @@ namespace Datadog.Trace.OpenTracing
             }
             else
             {
-                // NOTICE : Insert dummy SpanContext.
+                // NOTICE : Return dummy SpanContext.
                 SpanContext ddSpanContext = new SpanContext(0, 0);
-                return new OpenTracingSpanContext(ddSpanContext);            
-            
-                // NOTICE : Commented out below line, because they did not implement TEXT_MAP type decoder.
-                // throw new NotSupportedException($"Tracer.Extract is not implemented for {format} by Datadog.Trace");
+                return new OpenTracingSpanContext(ddSpanContext);
             }
         }
 
