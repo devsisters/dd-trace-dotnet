@@ -68,7 +68,7 @@ namespace Datadog.Trace.OpenTracing
             }
             else
             {
-                throw new NotSupportedException($"Tracer.Inject is not implemented for {format} by Datadog.Trace");
+                //throw new NotSupportedException($"Tracer.Inject is not implemented for {format} by Datadog.Trace");
             }
         }
     }
