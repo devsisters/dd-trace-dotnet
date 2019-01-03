@@ -49,7 +49,8 @@ namespace Datadog.Trace.OpenTracing
             }
             else
             {
-                throw new NotSupportedException($"Tracer.Extract is not implemented for {format} by Datadog.Trace");
+                // NOTICE : Commented out below line, because they did not implement TEXT_MAP type decoder.
+                // throw new NotSupportedException($"Tracer.Extract is not implemented for {format} by Datadog.Trace");
             }
         }
 
